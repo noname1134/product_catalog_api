@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
+from typing import Literal
 
 
 class UserCreate(BaseModel):
@@ -21,3 +22,13 @@ class UserResponse(BaseModel):
     phone: str = Field(min_length=1, max_length=20)
     country: str = Field(min_length=1, max_length=100)
     city: str = Field(min_length=1, max_length=100)
+
+
+class UserLogin(BaseModel):
+    username: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"]

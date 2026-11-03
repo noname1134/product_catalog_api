@@ -11,6 +11,10 @@ services:
     volumes:
       - shop_mysql_data:/var/lib/mysql
       - ./sql:/docker-entrypoint-initdb.d:ro
-
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+      
 volumes:
   shop_mysql_data:

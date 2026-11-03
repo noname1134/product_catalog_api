@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas.users_schema import UserResponse, UserCreate
-from services.users_service import create_user as create_user_service
-from exceptions.user_exceptions import UserAlreadyExistsError
+from schemas.users_schema import UserResponse, UserCreate, UserLogin, LoginResponse
+from services.users_service import create_user as create_user_service, login_user as login_user_service
+from exceptions.user_exceptions import UserAlreadyExistsError, InvalidCredentialsError
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -14,3 +14,11 @@ def create_user(user: UserCreate):
         return create_user_service(user)
     except UserAlreadyExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/login", response_model=LoginResponse)
+def login_user(user: UserLogin):
+    try:
+        return login_user_service(user.username, user.password)
+    except InvalidCredentialsError:
+        raise HTTPException(status_code=401, detail="Invalid username or password", headers={"WWW-Authenticate": "Bearer"})

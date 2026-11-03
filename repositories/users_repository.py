@@ -47,3 +47,19 @@ def get_user_by_id(user_id: int):
             cursor.close()
     finally:
         connection.close()
+
+
+def get_user_by_username(username: str):
+    query = "SELECT user_id, username, password_hash FROM users WHERE username = %s"
+    params = [username]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchone()
+            return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
