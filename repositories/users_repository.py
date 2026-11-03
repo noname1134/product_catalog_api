@@ -31,3 +31,19 @@ def create_user(user: UserCreate, password_hash: str) -> int:
             cursor.close()
     finally:
         connection.close()
+
+
+def get_user_by_id(user_id: int):
+    query = "SELECT user_id, username, first_name, last_name, email, phone, country, city FROM users WHERE user_id = %s"
+    params = [user_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchone()
+            return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
