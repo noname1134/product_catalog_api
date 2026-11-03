@@ -10,7 +10,7 @@ OPERATORS = {
 }
 
 
-def get_all_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None):
+def get_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None):
     conditions = []
     params = []
     if names:
@@ -26,7 +26,7 @@ def get_all_products(names: list[str], price: Decimal | None, stock: int | None,
         conditions.append(f"stock_quantity {OPERATORS[stock_operator]} %s")
         params.append(stock)
 
-    query = f"SELECT product_id, name, description, price, stock_quantity FROM products"
+    query = f"SELECT * FROM products"
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
@@ -39,6 +39,22 @@ def get_all_products(names: list[str], price: Decimal | None, stock: int | None,
         try:
             cursor.execute(query, params)
             return cursor.fetchall()
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+
+def get_product_by_id(product_id: int):
+    query = "SELECT * FROM products WHERE product_id = %s"
+    params = [product_id]
+
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            return cursor.fetchone()
         finally:
             cursor.close()
     finally:
