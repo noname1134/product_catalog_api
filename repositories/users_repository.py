@@ -33,7 +33,7 @@ def create_user(user: UserCreate, password_hash: str) -> int:
         connection.close()
 
 
-def get_user_by_id(user_id: int):
+def get_user_by_id(user_id: int) -> dict:
     query = "SELECT user_id, username, first_name, last_name, email, phone, country, city FROM users WHERE user_id = %s"
     params = [user_id]
     connection = get_connection()
@@ -49,7 +49,7 @@ def get_user_by_id(user_id: int):
         connection.close()
 
 
-def get_user_by_username(username: str):
+def get_user_by_username(username: str) -> dict:
     query = "SELECT user_id, username, password_hash FROM users WHERE username = %s"
     params = [username]
     connection = get_connection()

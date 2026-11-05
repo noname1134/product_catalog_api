@@ -1,12 +1,14 @@
 import secrets
 from redis_client import get_redis_client
 
+SESSION_EXPIRATION_SECONDS = 3600
+
 
 def create_session(user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     client = get_redis_client()
     session_key = f"session:{token}"
-    client.set(session_key, user_id, ex=3600)
+    client.set(session_key, user_id, ex=SESSION_EXPIRATION_SECONDS)
     return token
 
 
