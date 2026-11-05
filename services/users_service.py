@@ -1,5 +1,5 @@
 from repositories.users_repository import create_user as create_user_repository, get_user_by_id as get_user_by_id_repository, get_user_by_username as get_user_by_username_repository
-from repositories.sessions_repository import create_session as create_session_repository, get_session_user_id as get_session_user_id_repository
+from repositories.sessions_repository import create_session as create_session_repository, get_session_user_id as get_session_user_id_repository, delete_session as delete_session_repository
 from schemas.users_schema import UserCreate
 from security.passwords import hash_password, verify_password
 from exceptions.user_exceptions import InvalidCredentialsError
@@ -39,3 +39,7 @@ def get_authenticated_user(token: str) -> dict:
      if user is None:
          raise InvalidCredentialsError("Invalid or expired session")
      return user
+
+
+def logout_user(token: str) -> None:
+    delete_session_repository(token)
