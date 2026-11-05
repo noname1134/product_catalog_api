@@ -10,7 +10,7 @@ OPERATORS = {
 }
 
 
-def get_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None):
+def get_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None) -> dict | None:
     conditions = []
     params = []
     if names:
@@ -45,7 +45,7 @@ def get_products(names: list[str], price: Decimal | None, stock: int | None, pri
         connection.close()
 
 
-def get_product_by_id(product_id: int):
+def get_product_by_id(product_id: int) -> dict | None:
     query = "SELECT * FROM products WHERE product_id = %s"
     params = [product_id]
 
