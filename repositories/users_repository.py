@@ -33,7 +33,28 @@ def create_user(user: UserCreate, password_hash: str) -> int:
         connection.close()
 
 
-def get_user_by_id(user_id: int) -> dict:
+def delete_user_by_id(user_id: int) -> bool:
+    query = "DELETE FROM users WHERE user_id = %s"
+    params = [user_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        try:
+            cursor.execute(query, params)
+            deleted_count = cursor.rowcount
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+    return deleted_count > 0
+
+
+def get_user_by_id(user_id: int) -> dict | None:
     query = "SELECT user_id, username, first_name, last_name, email, phone, country, city FROM users WHERE user_id = %s"
     params = [user_id]
     connection = get_connection()
@@ -49,7 +70,7 @@ def get_user_by_id(user_id: int) -> dict:
         connection.close()
 
 
-def get_user_by_username(username: str) -> dict:
+def get_user_by_username(username: str) -> dict | None:
     query = "SELECT user_id, username, password_hash FROM users WHERE username = %s"
     params = [username]
     connection = get_connection()

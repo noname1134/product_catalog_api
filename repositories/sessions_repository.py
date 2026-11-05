@@ -8,7 +8,13 @@ def create_session(user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     client = get_redis_client()
     session_key = f"session:{token}"
-    client.set(session_key, user_id, ex=SESSION_EXPIRATION_SECONDS)
+    user_sessions_key = f"user_sessions:{user_id}"
+    with client.pipeline(transaction=True) as pipe:
+        pipe.set(session_key, user_id, ex=SESSION_EXPIRATION_SECONDS)
+        pipe.sadd(user_sessions_key, token)
+        pipe.expire(user_sessions_key, SESSION_EXPIRATION_SECONDS)
+        pipe.execute()
+
     return token
 
 
@@ -22,4 +28,24 @@ def get_session_user_id(token: str) -> int | None:
 
 def delete_session(token: str) -> None:
     client = get_redis_client()
-    client.delete(f"session:{token}")
+    session_key = f"session:{token}"
+    user_id = client.get(session_key)
+
+    if user_id is None:
+        return
+
+    with client.pipeline(transaction=True) as pipe:
+        pipe.delete(session_key)
+        pipe.srem(f"user_sessions:{user_id}", token)
+        pipe.execute()
+
+
+def delete_user_sessions(user_id: int) -> None:
+    client = get_redis_client()
+    user_set_key = f"user_sessions:{user_id}"
+    tokens = client.smembers(user_set_key)
+    with client.pipeline(transaction=True) as pipe:
+        for token in tokens:
+            pipe.delete(user_set_key, token)
+        pipe.delete(user_set_key)
+        pipe.execute()

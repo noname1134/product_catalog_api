@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi.security import HTTPAuthorizationCredentials
 
 from schemas.users_schema import UserResponse, UserCreate, UserLogin, LoginResponse
-from services.users_service import create_user as create_user_service, login_user as login_user_service, logout_user as logout_user_service
+from services.users_service import create_user as create_user_service, login_user as login_user_service, logout_user as logout_user_service, delete_account as delete_account_service
 from exceptions.user_exceptions import UserAlreadyExistsError, InvalidCredentialsError
 from security.auth_dependencies import get_current_user, security_scheme
 
@@ -16,6 +16,13 @@ def create_user(user: UserCreate) -> Response:
         return create_user_service(user)
     except UserAlreadyExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.delete("/me", status_code=204)
+def delete_user(current_user: Annotated[dict, Depends(get_current_user)]) -> Response:
+    if delete_account_service(current_user["user_id"]):
+        return Response(status_code=204)
+    return Response(status_code=404)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -37,7 +44,6 @@ def logout_user(credentials: Annotated[HTTPAuthorizationCredentials | None, Depe
 
     logout_user_service(credentials.credentials)
     return Response(status_code=204)
-
 
 
 @router.get("/me", response_model=UserResponse)
