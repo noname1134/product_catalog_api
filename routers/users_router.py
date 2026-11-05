@@ -9,6 +9,7 @@ from security.auth_dependencies import get_current_user, security_scheme
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+CurrentUser = Annotated[dict, Depends(get_current_user)]
 
 @router.post("/", response_model=UserResponse, status_code=201)
 def create_user(user: UserCreate) -> Response:
@@ -19,7 +20,7 @@ def create_user(user: UserCreate) -> Response:
 
 
 @router.delete("/me", status_code=204)
-def delete_user(current_user: Annotated[dict, Depends(get_current_user)]) -> Response:
+def delete_user(current_user: CurrentUser) -> Response:
     if delete_account_service(current_user["user_id"]):
         return Response(status_code=204)
     return Response(status_code=404)
@@ -47,5 +48,5 @@ def logout_user(credentials: Annotated[HTTPAuthorizationCredentials | None, Depe
 
 
 @router.get("/me", response_model=UserResponse)
-def read_current_user(current_user: Annotated[dict, Depends(get_current_user)]):
+def read_current_user(current_user: CurrentUser):
     return current_user

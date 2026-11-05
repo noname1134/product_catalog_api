@@ -1,0 +1,17 @@
+from repositories import favorites_repository, products_repository
+from exceptions.favorite_exceptions import ProductNotFoundError
+
+
+def list_favorites(user_id: int) -> list[dict]:
+    return favorites_repository.get_favorites_by_user_id(user_id)
+
+
+def add_favorite(user_id: int, product_id: int) -> None:
+    if products_repository.get_product_by_id(product_id) is None:
+        raise ProductNotFoundError("Product not found")
+
+    favorites_repository.add_favorite(user_id, product_id)
+
+
+def delete_favorite(user_id: int, product_id: int) -> bool:
+    return favorites_repository.remove_favorite(user_id, product_id)
