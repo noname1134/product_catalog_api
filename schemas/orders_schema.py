@@ -23,3 +23,7 @@ class TempOrderResponse(BaseModel):
     shipping_address: str | None
     total_price: Decimal
     items: list[OrderItemResponse]
+
+
+class CheckoutOrder(BaseModel):
+    shipping_address: str = Field(min_length=1, max_length=255, str_strip=True)

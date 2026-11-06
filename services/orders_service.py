@@ -36,3 +36,7 @@ def remove_item_from_temp_order(user_id, product_id) -> bool:
 
 def delete_temp_order(user_id: int) -> bool:
     return orders_repository.delete_temp_order(user_id)
+
+
+def close_order(user_id: int, order_id: int, shipping_address: str) -> bool:
+    return orders_repository.close_order(user_id, order_id, shipping_address)
