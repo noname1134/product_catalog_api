@@ -2,6 +2,7 @@ from database import get_connection
 from exceptions.user_exceptions import UserNotFoundError
 from exceptions.product_exception import ProductNotFoundError, ProductStockQuantityError
 
+
 def add_item_to_temp_order(user_id: int, product_id: int, quantity: int) -> int:
     status = "TEMP"
     user_query = "SELECT user_id FROM users WHERE user_id = %s FOR UPDATE"
@@ -77,6 +78,54 @@ def get_temp_order(user_id: int) -> dict | None:
             cursor.execute(query, params)
             result = cursor.fetchall()
             return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+
+def remove_item_from_temp_order(user_id: int, product_id: int) -> bool:
+    user_query = "SELECT user_id FROM users WHERE user_id = %s FOR UPDATE"
+    user_params = [user_id]
+    is_order_query = "SELECT order_id FROM orders WHERE user_id = %s AND status = 'TEMP'"
+    is_order_params = [user_id]
+    update_order_total_price_query = "UPDATE orders SET total_price = (SELECT SUM(quantity * unit_price) FROM order_items WHERE order_id = %s) WHERE order_id = %s"
+
+    connection = get_connection()
+    try:
+        connection.start_transaction()
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(user_query, user_params)
+            user = cursor.fetchone()
+            if user is None:
+                raise UserNotFoundError("User not found")
+
+            cursor.execute(is_order_query, is_order_params)
+            order = cursor.fetchone()
+            if order is None:
+                connection.rollback()
+                return False
+
+            order_id = order["order_id"]
+            remove_item_query = "DELETE FROM order_items WHERE order_id = %s AND product_id = %s"
+            cursor.execute(remove_item_query, (order_id, product_id))
+            if cursor.rowcount == 0:
+                connection.rollback()
+                return False
+
+            is_order_item_left_query = "SELECT 1 FROM order_items WHERE order_id = %s LIMIT 1"
+            cursor.execute(is_order_item_left_query, (order_id,))
+            if cursor.fetchone() is None:
+                delete_order = "DELETE FROM orders WHERE order_id = %s and status = 'TEMP'"
+                cursor.execute(delete_order, (order_id,))
+            else:
+                cursor.execute(update_order_total_price_query, (order_id, order_id))
+            connection.commit()
+            return True
+        except Exception:
+            connection.rollback()
+            raise
         finally:
             cursor.close()
     finally:

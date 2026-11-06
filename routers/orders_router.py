@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from schemas.orders_schema import AddOrderItem, TempOrderResponse
 from services import orders_service
@@ -29,3 +29,10 @@ def get_temp_order(current_user: CurrentUser):
     if not tmp_order:
         raise HTTPException(status_code=404, detail="No pending order")
     return tmp_order
+
+
+@router.delete("/temp/{product_id}", status_code=204)
+def remove_item_from_temp_order(product_id: int, current_user: CurrentUser) -> Response:
+    if not orders_service.remove_item_from_temp_order(current_user["user_id"], product_id):
+        raise HTTPException(status_code=404, detail="Item not found in your pending order")
+    return Response(status_code=204)

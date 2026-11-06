@@ -28,3 +28,7 @@ def get_temp_order(user_id: int) -> dict | None:
             if row["product_id"] is not None
         ]
     }
+
+
+def remove_item_from_temp_order(user_id, product_id) -> bool:
+    return orders_repository.remove_item_from_temp_order(user_id, product_id)
