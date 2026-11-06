@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas.orders_schema import AddOrderItem
+from schemas.orders_schema import AddOrderItem, TempOrderResponse
 from services import orders_service
 from security.auth_dependencies import CurrentUser
 from exceptions.product_exception import ProductNotFoundError, ProductStockQuantityError
@@ -8,7 +8,6 @@ from exceptions.user_exceptions import UserNotFoundError
 
 
 router = APIRouter(prefix="/orders", tags=["orders"])
-
 
 
 @router.post("/temp/items")
@@ -22,3 +21,11 @@ def add_item_to_temp_order(item: AddOrderItem, current_user: CurrentUser):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ProductStockQuantityError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/temp", response_model=TempOrderResponse)
+def get_temp_order(current_user: CurrentUser):
+    tmp_order = orders_service.get_temp_order(current_user["user_id"])
+    if not tmp_order:
+        raise HTTPException(status_code=404, detail="No pending order")
+    return tmp_order

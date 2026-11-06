@@ -64,3 +64,20 @@ def add_item_to_temp_order(user_id: int, product_id: int, quantity: int) -> int:
         raise
     finally:
         connection.close()
+
+
+def get_temp_order(user_id: int) -> dict | None:
+    query = """SELECT o.order_id, o.creation_date, o.status, o.shipping_address, o.total_price, i.product_id, i.product_name, i.quantity, i.unit_price 
+               FROM orders AS o LEFT JOIN order_items AS i ON o.order_id = i.order_id WHERE o.user_id = %s AND o.status = 'TEMP' ORDER BY i.product_id"""
+    params = [user_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+            return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
