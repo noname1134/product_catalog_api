@@ -41,6 +41,7 @@ CREATE TABLE orders (
         END
     ) VIRTUAL,
     CONSTRAINT unique_temp_per_user UNIQUE (single_temp),
+    CONSTRAINT check_address_when_closed CHECK (status != 'CLOSE' OR shipping_address IS NOT NULL),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE CASCADE
 );

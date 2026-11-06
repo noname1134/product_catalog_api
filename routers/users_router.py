@@ -5,11 +5,10 @@ from fastapi.security import HTTPAuthorizationCredentials
 from schemas.users_schema import UserResponse, UserCreate, UserLogin, LoginResponse
 from services.users_service import create_user as create_user_service, login_user as login_user_service, logout_user as logout_user_service, delete_account as delete_account_service
 from exceptions.user_exceptions import UserAlreadyExistsError, InvalidCredentialsError
-from security.auth_dependencies import get_current_user, security_scheme
+from security.auth_dependencies import CurrentUser, security_scheme
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-CurrentUser = Annotated[dict, Depends(get_current_user)]
 
 @router.post("/", response_model=UserResponse, status_code=201)
 def create_user(user: UserCreate) -> Response:

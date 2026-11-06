@@ -25,3 +25,6 @@ def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials | None,
             detail="Invalid or expired session",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+CurrentUser = Annotated[dict, Depends(get_current_user)]

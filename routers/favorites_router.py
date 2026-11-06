@@ -1,15 +1,12 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, Response, HTTPException
+from fastapi import APIRouter, Response, HTTPException
 
 from schemas.products_schema import ProductResponse
-from security.auth_dependencies import get_current_user
+from security.auth_dependencies import CurrentUser
 from services import favorites_service
-from exceptions.favorite_exceptions import FavoriteAlreadyExistsError, ProductNotFoundError
+from exceptions.favorite_exceptions import FavoriteAlreadyExistsError
+from exceptions.product_exception import ProductNotFoundError
 
 router = APIRouter(prefix="/favorites", tags=["favorites"])
-
-CurrentUser = Annotated[dict, Depends(get_current_user)]
 
 
 @router.get("/", response_model=list[ProductResponse])

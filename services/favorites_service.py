@@ -1,5 +1,5 @@
 from repositories import favorites_repository, products_repository
-from exceptions.favorite_exceptions import ProductNotFoundError
+from exceptions.product_exception import ProductNotFoundError
 
 
 def list_favorites(user_id: int) -> list[dict]:
