@@ -1,4 +1,5 @@
-from repositories import favorites_repository, products_repository
+from repositories import favorites_repository
+from repositories.products_repository import get_product_by_id
 from exceptions.product_exception import ProductNotFoundError
 
 
@@ -7,7 +8,7 @@ def list_favorites(user_id: int) -> list[dict]:
 
 
 def add_favorite(user_id: int, product_id: int) -> None:
-    if products_repository.get_product_by_id(product_id) is None:
+    if get_product_by_id(product_id) is None:
         raise ProductNotFoundError("Product not found")
 
     favorites_repository.add_favorite(user_id, product_id)

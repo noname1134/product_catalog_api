@@ -1,5 +1,4 @@
-from repositories.users_repository import create_user as create_user_repository, get_user_by_id as get_user_by_id_repository, get_user_by_username as get_user_by_username_repository, delete_user_by_id as delete_user_by_id_repository
-from repositories.sessions_repository import create_session as create_session_repository, get_session_user_id as get_session_user_id_repository, delete_session as delete_session_repository, delete_user_sessions as delete_user_sessions_repository
+from repositories import users_repository, sessions_repository
 from schemas.users_schema import UserCreate
 from security.passwords import hash_password, verify_password
 from exceptions.user_exceptions import InvalidCredentialsError
@@ -7,24 +6,24 @@ from exceptions.user_exceptions import InvalidCredentialsError
 
 def create_user(user: UserCreate) -> dict:
     password_hash = hash_password(user.password)
-    user_id = create_user_repository(user, password_hash)
-    return get_user_by_id_repository(user_id)
+    user_id = users_repository.create_user(user, password_hash)
+    return users_repository.get_user_by_id(user_id)
 
 
 def delete_account(user_id: int) -> bool:
-    is_deleted = delete_user_by_id_repository(user_id)
+    is_deleted = users_repository.delete_user_by_id(user_id)
     if is_deleted:
-        delete_user_sessions_repository(user_id)
+        sessions_repository.delete_user_sessions(user_id)
     return is_deleted
 
 
 def authenticate_user(username: str, password: str) -> dict | None:
-    user = get_user_by_username_repository(username)
+    user = users_repository.get_user_by_username(username)
     if user is None:
         raise InvalidCredentialsError("Invalid username or password")
     if not verify_password(password, user["password_hash"]):
         raise InvalidCredentialsError("Invalid username or password")
-    ret_user = get_user_by_id_repository(user["user_id"])
+    ret_user = users_repository.get_user_by_id(user["user_id"])
     if ret_user is None:
         raise InvalidCredentialsError("User deleted")
     return ret_user
@@ -32,21 +31,21 @@ def authenticate_user(username: str, password: str) -> dict | None:
 
 def login_user(username: str, password: str) -> dict:
     user = authenticate_user(username, password)
-    token = create_session_repository(user["user_id"])
+    token = sessions_repository.create_session(user["user_id"])
     return {
         "access_token": token,
         "token_type": "bearer"
     }
 
 def get_authenticated_user(token: str) -> dict:
-     user_id = get_session_user_id_repository(token)
+     user_id = sessions_repository.get_session_user_id(token)
      if user_id is None:
          raise InvalidCredentialsError("Invalid or expired session")
-     user = get_user_by_id_repository(user_id)
+     user = users_repository.get_user_by_id(user_id)
      if user is None:
          raise InvalidCredentialsError("Invalid or expired session")
      return user
 
 
 def logout_user(token: str) -> None:
-    delete_session_repository(token)
+    sessions_repository.delete_session(token)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Annotated
 from decimal import Decimal
 
-from services.products_service import get_products as get_products_service, get_product_by_id as get_product_by_id_service
+from services import products_service
 from schemas.products_schema import ProductResponse
 from enums.comparison_operator import ComparisonOperator
 
@@ -24,12 +24,12 @@ def get_products(names: Annotated[list[str], Query(alias="name")] = [],
     if stock is None and stock_operator is not None:
         raise HTTPException(status_code=422, detail="stock is required when stock_operator is provided")
 
-    return get_products_service(names, price, stock, price_operator, stock_operator)
+    return products_service.get_products(names, price, stock, price_operator, stock_operator)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product_by_id(product_id: int):
-    product = get_product_by_id_service(product_id)
+    product = products_service.get_product_by_id(product_id)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
