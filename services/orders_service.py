@@ -32,3 +32,7 @@ def get_temp_order(user_id: int) -> dict | None:
 
 def remove_item_from_temp_order(user_id, product_id) -> bool:
     return orders_repository.remove_item_from_temp_order(user_id, product_id)
+
+
+def delete_temp_order(user_id: int) -> bool:
+    return orders_repository.delete_temp_order(user_id)

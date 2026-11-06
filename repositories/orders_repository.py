@@ -130,3 +130,25 @@ def remove_item_from_temp_order(user_id: int, product_id: int) -> bool:
             cursor.close()
     finally:
         connection.close()
+
+
+
+def delete_temp_order(user_id: int) -> bool:
+    query = "DELETE FROM orders WHERE user_id = %s AND status = 'TEMP'"
+    params = [user_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        try:
+            cursor.execute(query, params)
+            deleted_count = cursor.rowcount
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+    return deleted_count > 0

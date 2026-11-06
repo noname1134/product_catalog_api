@@ -36,3 +36,10 @@ def remove_item_from_temp_order(product_id: int, current_user: CurrentUser) -> R
     if not orders_service.remove_item_from_temp_order(current_user["user_id"], product_id):
         raise HTTPException(status_code=404, detail="Item not found in your pending order")
     return Response(status_code=204)
+
+
+@router.delete("/temp", status_code=204)
+def delete_temp_order(current_user: CurrentUser) -> Response:
+    if not orders_service.delete_temp_order(current_user["user_id"]):
+        raise HTTPException(status_code=404, detail="No pending order")
+    return Response(status_code=204)
