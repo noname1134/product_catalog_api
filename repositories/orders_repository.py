@@ -85,6 +85,23 @@ def get_temp_order(user_id: int) -> list[dict] | None:
         connection.close()
 
 
+def list_orders_by_user_id(user_id: int) -> list[dict]:
+    query = """SELECT order_id, creation_date, status, shipping_address, total_price FROM orders WHERE user_id = %s 
+               ORDER BY CASE WHEN status = 'TEMP' THEN 0 ELSE 1 END, creation_date DESC, order_id DESC"""
+    params = [user_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+            return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+
 def remove_item_from_temp_order(user_id: int, product_id: int) -> bool:
     user_query = "SELECT user_id FROM users WHERE user_id = %s FOR UPDATE"
     user_params = [user_id]

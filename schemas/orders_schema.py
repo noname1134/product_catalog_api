@@ -25,5 +25,13 @@ class TempOrderResponse(BaseModel):
     items: list[OrderItemResponse]
 
 
+class OrdersResponse(BaseModel):
+    order_id: int
+    creation_date: datetime
+    status: Literal["TEMP", "CLOSE"]
+    shipping_address: str | None
+    total_price: Decimal
+
+
 class CheckoutOrder(BaseModel):
     shipping_address: str = Field(min_length=1, max_length=255, str_strip=True)
