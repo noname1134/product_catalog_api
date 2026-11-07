@@ -33,7 +33,7 @@ def get_session_messages(session_id: str, current_user: CurrentUser):
 @router.post("/sessions/{session_id}/messages", response_model=ChatReplyResponse)
 def get_chat_reply(session_id: str, chat_message: ChatMessageCreate, current_user: CurrentUser):
     try:
-        return chat_service.send_chat_message(current_user["user_id"], session_id, chat_message["message"])
+        return chat_service.send_chat_message(current_user["user_id"], session_id, chat_message.message)
     except ChatSessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ChatSessionBusyError as exc:
