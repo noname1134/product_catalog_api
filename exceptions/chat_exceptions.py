@@ -1,0 +1,2 @@
+class ChatSessionNotFoundError(Exception):
+    pass
