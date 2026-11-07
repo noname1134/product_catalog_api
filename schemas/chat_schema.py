@@ -19,3 +19,8 @@ class ChatSessionResponse(BaseModel):
 class ChatMessageResponse(BaseModel):
     role: Literal["user", "assistant"]
     content: str
+
+
+class ChatReplyResponse(BaseModel):
+    reply: str
+    prompts_remaining: int = Field(ge=0, le=5)

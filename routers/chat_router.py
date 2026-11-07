@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from exceptions.chat_exceptions import ChatSessionNotFoundError
-from schemas.chat_schema import ChatSessionResponse, ChatSessionCreated, ChatMessageResponse
+from exceptions.chat_exceptions import ChatSessionNotFoundError, ChatSessionBusyError, ChatPromptLimitError, ChatAssistantUnavailableError
+from schemas.chat_schema import ChatSessionResponse, ChatSessionCreated, ChatMessageResponse, ChatReplyResponse, ChatMessageCreate
 from security.auth_dependencies import CurrentUser
 from services import chat_service
 
@@ -28,3 +28,17 @@ def get_session_messages(session_id: str, current_user: CurrentUser):
         return chat_service.get_chat_messages(current_user["user_id"], session_id)
     except ChatSessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/sessions/{session_id}/messages", response_model=ChatReplyResponse)
+def get_chat_reply(session_id: str, chat_message: ChatMessageCreate, current_user: CurrentUser):
+    try:
+        return chat_service.send_chat_message(current_user["user_id"], session_id, chat_message["message"])
+    except ChatSessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ChatSessionBusyError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ChatPromptLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ChatAssistantUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

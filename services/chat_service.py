@@ -4,6 +4,7 @@ from repositories import chat_repository
 from services.products_service import get_products
 from exceptions.chat_exceptions import ChatSessionNotFoundError
 from schemas.products_schema import ProductResponse
+from integrations import shopping_assistant
 
 
 def get_user_chat_session(user_id: int, session_id: str) -> dict:
@@ -22,6 +23,21 @@ def create_chat_session(user_id: int) -> str:
 def get_chat_messages(user_id: int, session_id: str) -> list[dict]:
     get_user_chat_session(user_id, session_id)
     return chat_repository.get_chat_messages(session_id)
+
+
+def send_chat_message(user_id: int, session_id: str, message: str) -> dict:
+    prompts_used = chat_repository.reserve_chat_prompt(user_id, session_id)
+    try:
+        history = get_chat_messages(user_id, session_id)
+        product_context = build_product_context()
+        assistant_message = shopping_assistant.generate_reply(history, message, product_context)
+        chat_repository.save_chat_turn(user_id, session_id, message, assistant_message)
+        return {
+            "reply": assistant_message,
+            "prompts_remaining": chat_repository.CHAT_PROMPT_LIMIT - prompts_used
+        }
+    finally:
+        chat_repository.release_chat_session(session_id)
 
 
 def build_product_context() -> str:

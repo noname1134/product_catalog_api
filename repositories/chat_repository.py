@@ -2,7 +2,7 @@ import secrets
 import json
 
 from redis_client import get_redis_client
-from exceptions.chat_exceptions import ChatSessionNotFoundError, ChatPromptLimitError
+from exceptions.chat_exceptions import ChatSessionNotFoundError, ChatPromptLimitError, ChatSessionBusyError
 from repositories.chat_scripts import RESERVE_CHAT_PROMPT_SCRIPT, SAVE_CHAT_TURN_SCRIPT
 
 CHAT_SESSION_TTL_SECONDS = 3600
@@ -37,11 +37,18 @@ def get_chat_session(session_id: str) -> dict | None:
     }
 
 
+def release_chat_session(session_id: str) -> None:
+    client = get_redis_client()
+    client.hdel(f"chat_session:{session_id}", "processing")
+
+
 def reserve_chat_prompt(user_id: int, session_id: str) -> int:
     client = get_redis_client()
     result = client.eval(RESERVE_CHAT_PROMPT_SCRIPT, 1, f"chat_session:{session_id}", str(user_id), CHAT_PROMPT_LIMIT)
     if result == -1:
         raise ChatSessionNotFoundError("Chat session not found")
+    if result == -2:
+        raise ChatSessionBusyError("A message is already being processed")
     if result == 0:
         raise ChatPromptLimitError("Chat session limit reached")
     return int(result)
