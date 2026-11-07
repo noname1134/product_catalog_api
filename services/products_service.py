@@ -16,10 +16,10 @@ def get_products(names: list[str], price: Decimal | None, stock: int | None, pri
         return products_repository.get_products(names, price, stock, price_operator, stock_operator)
 
     products = products_cache_repository.get_cached_products()
-    if products is not None:
-        return products
-    products = products_repository.get_products(names, price, stock, price_operator, stock_operator)
-    products_cache_repository.cache_products(products)
+    if products is None:
+        products = products_repository.get_products(names, price, stock, price_operator, stock_operator)
+        products_cache_repository.cache_products(products)
+
     return products
 
 

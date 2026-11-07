@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, ConfigDict
 
 class ChatMessageCreate(BaseModel):
@@ -12,3 +14,8 @@ class ChatSessionCreated(BaseModel):
 class ChatSessionResponse(BaseModel):
     user_id: int
     prompts_used: int = Field(ge=0, le=5)
+
+
+class ChatMessageResponse(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
