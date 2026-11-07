@@ -10,7 +10,6 @@ API_BASE_URL = os.environ["API_BASE_URL"].rstrip("/")
 REQUEST_TIMEOUT_SECONDS = 5
 
 st.title("My Shopping Store")
-st.write("Browse our available products.")
 
 if "access_token" not in st.session_state:
     st.session_state["access_token"] = None
@@ -40,7 +39,7 @@ with st.sidebar:
                     "city": city
                 }
                 try:
-                    response = requests.post(f"{API_BASE_URL}/users", json=user_info, timeout=REQUEST_TIMEOUT_SECONDS)
+                    response = requests.post(f"{API_BASE_URL}/users/", json=user_info, timeout=REQUEST_TIMEOUT_SECONDS)
                     if response.status_code == 201:
                         st.success("Account created. You can now log in.")
                     elif response.status_code == 409:
@@ -85,84 +84,199 @@ with st.sidebar:
                 st.error("Could not log out. Please try again.")
 
 
-with st.form("product_search"):
-    search_text = st.text_input(
-        "Search products",
-        placeholder="For example: sun, table",
-    )
+def get_favorites_ids():
+    if st.session_state["access_token"] is None:
+        return None
+    try:
+        response = requests.get(f"{API_BASE_URL}/favorites/", headers={"Authorization": f"Bearer {st.session_state['access_token']}"}, timeout=REQUEST_TIMEOUT_SECONDS)
+        if response.status_code == 200:
+            return {product["product_id"] for product in response.json()}
+        elif response.status_code == 401:
+            st.session_state["access_token"] = None
+            st.rerun()
+        else:
+            st.error("Favorites page is currently unavailable.")
+    except requests.RequestException:
+        st.error("Favorites page is currently unavailable.")
 
-    filter_by_price = st.checkbox("Filter by price")
-    price_operator = st.selectbox(
-        "Price comparison",
-        options=["lt", "gt", "eq"],
-        format_func=lambda value: {
-            "lt": "Less than",
-            "gt": "Greater than",
-            "eq": "Equal to",
-        }[value],
-    )
 
-    price = st.number_input(
-        "Price (USD)",
-        min_value=0.0,
-        value=50.0,
-        step=1.0,
-    )
 
-    filter_by_stock = st.checkbox("Filter by stock")
-    stock_operator = st.selectbox(
-        "Stock comparison",
-        options=["lt", "gt", "eq"],
-        format_func=lambda value: {
-            "lt": "Less than",
-            "gt": "Greater than",
-            "eq": "Equal to",
-        }[value],
-    )
+def handle_favorite_click(products: list[dict], favorite_ids: set[int]):
+    click = st.session_state["main_favorite_click"]
+    token = st.session_state["access_token"]
+    if click is None or token is None:
+        st.error("Login to add to favorites")
+        return
+    product_id = products[click["row"]]["product_id"]
+    url = f"{API_BASE_URL}/favorites/{product_id}"
+    headers = {"Authorization": f"Bearer {token}"}
 
-    stock = st.number_input(
-        "Quantity",
-        min_value=0,
-        value=1,
-        step=1,
-    )
+    try:
+        if product_id in favorite_ids:
+            response = requests.delete(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
+        else:
+            response = requests.post(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
+        if response.status_code == 204:
+            notice = ("success", "Favorites updated.")
+        elif response.status_code == 401:
+            st.session_state["access_token"] = None
+            notice = ("error", "Your session expired. Please log in again.")
+        elif response.status_code in (404, 409):
+            notice = ("error", response.json()["detail"])
+        else:
+            notice = ("error", "Could not update favorites. Please try again.")
 
-    st.form_submit_button("Search")
+    except requests.RequestException:
+        notice = ("error", "Could not update favorites. Please try again.")
 
-names = [
-    term.strip()
-    for term in search_text.split(",")
-    if term.strip()
-]
+    st.session_state["favorite_notice"] = notice
+    notice = st.session_state.pop("favorite_notice", None)
+    if notice:
+        level, message = notice
+        if level == "success":
+            st.success(message)
+        else:
+            st.error(message)
 
-params = {"name": names}
 
-if filter_by_price:
-    params["price_operator"] = price_operator
-    params["price"] = str(price)
+def render_main_page():
+    st.write("Browse our available products.")
+    with st.form("product_search"):
+        search_text = st.text_input(
+            "Search products",
+            placeholder="For example: sun, table",
+        )
 
-if filter_by_stock:
-    params["stock_operator"] = stock_operator
-    params["stock"] = str(stock)
+        filter_by_price = st.checkbox("Filter by price")
+        price_operator = st.selectbox(
+            "Price comparison",
+            options=["lt", "gt", "eq"],
+            format_func=lambda value: {
+                "lt": "Less than",
+                "gt": "Greater than",
+                "eq": "Equal to",
+            }[value],
+        )
 
-try:
-    response = requests.get(f"{API_BASE_URL}/products/", params=params, timeout=REQUEST_TIMEOUT_SECONDS)
-    response.raise_for_status()
-    products = response.json()
-except requests.RequestException:
-    st.error("Could not load products. Please try again shortly.")
-    st.stop()
+        price = st.number_input(
+            "Price (USD)",
+            min_value=0.0,
+            value=50.0,
+            step=1.0,
+        )
 
-if not products:
-    st.info("No products found.")
+        filter_by_stock = st.checkbox("Filter by stock")
+        stock_operator = st.selectbox(
+            "Stock comparison",
+            options=["lt", "gt", "eq"],
+            format_func=lambda value: {
+                "lt": "Less than",
+                "gt": "Greater than",
+                "eq": "Equal to",
+            }[value],
+        )
+
+        stock = st.number_input(
+            "Quantity",
+            min_value=0,
+            value=1,
+            step=1,
+        )
+
+        st.form_submit_button("Search")
+
+    names = [
+        term.strip()
+        for term in search_text.split(",")
+        if term.strip()
+    ]
+
+    params = {"name": names}
+
+    if filter_by_price:
+        params["price_operator"] = price_operator
+        params["price"] = str(price)
+
+    if filter_by_stock:
+        params["stock_operator"] = stock_operator
+        params["stock"] = str(stock)
+
+    try:
+        response = requests.get(f"{API_BASE_URL}/products/", params=params, timeout=REQUEST_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        products = response.json()
+    except requests.RequestException:
+        st.error("Could not load products. Please try again shortly.")
+        st.stop()
+
+    if not products:
+        st.info("No products found.")
+    else:
+        table_rows = []
+        favorite_ids = get_favorites_ids()
+        can_manage_favorites = (st.session_state["access_token"] is not None and favorite_ids is not None)
+        if can_manage_favorites:
+            for product in products:
+                table_rows.append({
+                    "Product": product["name"],
+                    "Price (USD)": product["price"],
+                    "In stock": product["stock_quantity"],
+                    "Favorite": ("Remove favorite" if favorite_ids and product["product_id"] in favorite_ids else "Add favorite")
+                })
+            st.dataframe(
+                table_rows, column_config={
+                    "Favorite": st.column_config.ButtonColumn("Favorite", key="main_favorite_click", on_click=handle_favorite_click, args=(products, favorite_ids))},
+                hide_index=True, width="stretch")
+        else:
+            for product in products:
+                table_rows.append({
+                    "Product": product["name"],
+                    "Price (USD)": product["price"],
+                    "In stock": product["stock_quantity"]
+                })
+            st.dataframe(table_rows, hide_index=True, width="stretch")
+
+
+def render_favorites_page():
+    st.write("Your favorite products list")
+    if st.session_state["access_token"] is None:
+        st.error("Please log in to access favorites.")
+        st.stop()
+    try:
+        response = requests.get(f"{API_BASE_URL}/favorites/", headers={"Authorization": f"Bearer {st.session_state['access_token']}"}, timeout=REQUEST_TIMEOUT_SECONDS)
+        if response.status_code == 200:
+            favorites = response.json()
+            if not favorites:
+                st.info("Favorite list is empty.")
+            else:
+                favorite_ids = {product["product_id"] for product in favorites}
+                table_rows = []
+                for product in favorites:
+                    table_rows.append({
+                        "Product": product["name"],
+                        "Price (USD)": product["price"],
+                        "In stock": product["stock_quantity"],
+                        "Favorite": "Remove favorite"
+                    })
+
+                st.dataframe(table_rows, column_config={
+                    "Favorite": st.column_config.ButtonColumn("Favorite", key="main_favorite_click", on_click=handle_favorite_click, args=(favorites, favorite_ids))},
+                             hide_index=True, width="stretch")
+        elif response.status_code == 401:
+            st.session_state["access_token"] = None
+            st.rerun()
+        else:
+            st.error("Favorites page is currently unavailable.")
+    except requests.RequestException:
+        st.error("Favorites page is currently unavailable.")
+
+
+selected_page = st.sidebar.radio("Navigation", ["Main", "Orders", "Favorites", "Chat assistant"])
+if selected_page == "Main":
+    render_main_page()
+elif selected_page == "Favorites":
+    render_favorites_page()
 else:
-    table_rows = []
-
-    for product in products:
-        table_rows.append({
-            "Product": product["name"],
-            "Price (USD)": product["price"],
-            "In stock": product["stock_quantity"],
-        })
-
-    st.dataframe(table_rows, hide_index=True, width="stretch")
+    if st.session_state["access_token"] is None:
+        st.info("Please log in to access this page.")
+        st.stop()
