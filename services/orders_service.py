@@ -1,5 +1,12 @@
+import logging
+
+from redis.exceptions import RedisError
+
 from repositories import orders_repository
+from repositories.products_cache_repository import invalidate_products_cache
 from schemas.orders_schema import AddOrderItem
+
+logger = logging.getLogger(__name__)
 
 
 def add_item_to_temp_order(user_id: int, item: AddOrderItem) -> int:
@@ -28,7 +35,14 @@ def delete_temp_order(user_id: int) -> bool:
 
 
 def close_order(user_id: int, order_id: int, shipping_address: str) -> bool:
-    return orders_repository.close_order(user_id, order_id, shipping_address)
+    is_success = orders_repository.close_order(user_id, order_id, shipping_address)
+    if is_success:
+        try:
+            invalidate_products_cache()
+        except RedisError:
+            logger.exception("Failed to invalidate product cache after checkout")
+    return is_success
+
 
 
 def create_order_detail_dict(rows: list[dict]) -> dict | None:

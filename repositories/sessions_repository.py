@@ -1,7 +1,7 @@
 import secrets
 from redis_client import get_redis_client
 
-SESSION_EXPIRATION_SECONDS = 3600
+SESSION_TTL_SECONDS = 3600
 
 
 def create_session(user_id: int) -> str:
@@ -10,9 +10,9 @@ def create_session(user_id: int) -> str:
     session_key = f"session:{token}"
     user_sessions_key = f"user_sessions:{user_id}"
     with client.pipeline(transaction=True) as pipe:
-        pipe.set(session_key, user_id, ex=SESSION_EXPIRATION_SECONDS)
+        pipe.set(session_key, user_id, ex=SESSION_TTL_SECONDS)
         pipe.sadd(user_sessions_key, token)
-        pipe.expire(user_sessions_key, SESSION_EXPIRATION_SECONDS)
+        pipe.expire(user_sessions_key, SESSION_TTL_SECONDS)
         pipe.execute()
 
     return token

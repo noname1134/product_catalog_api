@@ -10,7 +10,7 @@ OPERATORS = {
 }
 
 
-def get_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None) -> dict | None:
+def get_products(names: list[str], price: Decimal | None, stock: int | None, price_operator: ComparisonOperator | None, stock_operator: ComparisonOperator | None) -> list[dict]:
     conditions = []
     params = []
     if names:
