@@ -68,3 +68,18 @@ def save_chat_turn(user_id: int, session_id: str, user_message: str, assistant_m
     result = client.eval(SAVE_CHAT_TURN_SCRIPT, 2, f"chat_session:{session_id}", f"chat_messages:{session_id}", str(user_id), user_entry, assistant_entry)
     if result == -1:
         raise ChatSessionNotFoundError("Chat session not found")
+
+
+def delete_user_chat_sessions(user_id: int) -> None:
+    client = get_redis_client()
+    user_sessions_key = f"user_chat_sessions:{user_id}"
+    session_ids = client.smembers(user_sessions_key)
+
+    with client.pipeline(transaction=True) as pipe:
+        for session_id in session_ids:
+            pipe.delete(
+                f"chat_session:{session_id}",
+                f"chat_messages:{session_id}",
+            )
+        pipe.delete(user_sessions_key)
+        pipe.execute()

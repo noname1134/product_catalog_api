@@ -1,4 +1,5 @@
 from repositories import users_repository, sessions_repository
+from repositories.chat_repository import delete_user_chat_sessions
 from schemas.users_schema import UserCreate
 from security.passwords import hash_password, verify_password
 from exceptions.user_exceptions import InvalidCredentialsError
@@ -14,6 +15,7 @@ def delete_account(user_id: int) -> bool:
     is_deleted = users_repository.delete_user_by_id(user_id)
     if is_deleted:
         sessions_repository.delete_user_sessions(user_id)
+        delete_user_chat_sessions(user_id)
     return is_deleted
 
 

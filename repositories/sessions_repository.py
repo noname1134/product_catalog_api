@@ -42,10 +42,10 @@ def delete_session(token: str) -> None:
 
 def delete_user_sessions(user_id: int) -> None:
     client = get_redis_client()
-    user_set_key = f"user_sessions:{user_id}"
-    tokens = client.smembers(user_set_key)
+    user_sessions_key = f"user_sessions:{user_id}"
+    tokens = client.smembers(user_sessions_key)
     with client.pipeline(transaction=True) as pipe:
         for token in tokens:
-            pipe.delete(user_set_key, token)
-        pipe.delete(user_set_key)
+            pipe.delete(f"session:{token}")
+        pipe.delete(user_sessions_key)
         pipe.execute()
