@@ -102,6 +102,23 @@ def list_orders_by_user_id(user_id: int) -> list[dict]:
         connection.close()
 
 
+def get_order_by_id(user_id: int, order_id: int) -> list[dict]:
+    query = """SELECT o.order_id, o.creation_date, o.status, o.shipping_address, o.total_price, i.product_id, i.product_name, i.quantity, i.unit_price 
+               FROM orders AS o LEFT JOIN order_items AS i ON o.order_id = i.order_id WHERE o.user_id = %s AND o.order_id = %s ORDER BY i.product_id"""
+    params = [user_id, order_id]
+    connection = get_connection()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+            return result
+        finally:
+            cursor.close()
+    finally:
+        connection.close()
+
+
 def remove_item_from_temp_order(user_id: int, product_id: int) -> bool:
     user_query = "SELECT user_id FROM users WHERE user_id = %s FOR UPDATE"
     user_params = [user_id]

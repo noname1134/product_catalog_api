@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response
 
-from schemas.orders_schema import AddOrderItem, TempOrderResponse, CheckoutOrder, OrdersResponse
+from schemas.orders_schema import AddOrderItem, TempOrderResponse, CheckoutOrder, OrdersResponse, OrderDetailResponse
 from services import orders_service
 from security.auth_dependencies import CurrentUser
 from exceptions.product_exception import ProductNotFoundError, ProductStockQuantityError
@@ -48,6 +48,14 @@ def get_temp_order(current_user: CurrentUser):
 @router.get("/", response_model=list[OrdersResponse])
 def list_orders(current_user: CurrentUser):
     return orders_service.list_orders_by_user_id(current_user["user_id"])
+
+
+@router.get("/{order_id}", response_model=OrderDetailResponse)
+def get_order_by_id(order_id: int, current_user: CurrentUser):
+    order = orders_service.get_order_by_id(current_user["user_id"], order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
 
 
 @router.delete("/temp/{product_id}", status_code=204)

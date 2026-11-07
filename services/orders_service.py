@@ -7,6 +7,31 @@ def add_item_to_temp_order(user_id: int, item: AddOrderItem) -> int:
 
 def get_temp_order(user_id: int) -> dict | None:
     rows = orders_repository.get_temp_order(user_id)
+    return create_order_detail_dict(rows)
+
+
+def list_orders_by_user_id(user_id: int) -> list[dict]:
+    return orders_repository.list_orders_by_user_id(user_id)
+
+
+def get_order_by_id(user_id: int, order_id: int) -> dict | None:
+    rows = orders_repository.get_order_by_id(user_id, order_id)
+    return create_order_detail_dict(rows)
+
+
+def remove_item_from_temp_order(user_id, product_id) -> bool:
+    return orders_repository.remove_item_from_temp_order(user_id, product_id)
+
+
+def delete_temp_order(user_id: int) -> bool:
+    return orders_repository.delete_temp_order(user_id)
+
+
+def close_order(user_id: int, order_id: int, shipping_address: str) -> bool:
+    return orders_repository.close_order(user_id, order_id, shipping_address)
+
+
+def create_order_detail_dict(rows: list[dict]) -> dict | None:
     if not rows:
         return None
 
@@ -28,19 +53,3 @@ def get_temp_order(user_id: int) -> dict | None:
             if row["product_id"] is not None
         ]
     }
-
-
-def list_orders_by_user_id(user_id: int) -> list[dict] | None:
-    return orders_repository.list_orders_by_user_id(user_id)
-
-
-def remove_item_from_temp_order(user_id, product_id) -> bool:
-    return orders_repository.remove_item_from_temp_order(user_id, product_id)
-
-
-def delete_temp_order(user_id: int) -> bool:
-    return orders_repository.delete_temp_order(user_id)
-
-
-def close_order(user_id: int, order_id: int, shipping_address: str) -> bool:
-    return orders_repository.close_order(user_id, order_id, shipping_address)

@@ -33,5 +33,9 @@ class OrdersResponse(BaseModel):
     total_price: Decimal
 
 
+class OrderDetailResponse(OrdersResponse):
+    items: list[OrderItemResponse]
+
+
 class CheckoutOrder(BaseModel):
     shipping_address: str = Field(min_length=1, max_length=255, str_strip=True)
