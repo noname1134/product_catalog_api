@@ -16,7 +16,7 @@ Users can sign up, browse and filter products, save favorites, build a cart, che
 
 ## Stack
 
-FastAPI, MySQL 8.4, Redis 7, Streamlit, OpenAI Responses API, Docker Compose (for MySQL and Redis only).
+FastAPI, MySQL 8.4, Redis 7, Streamlit, OpenAI Responses API, Docker Compose (runs the whole stack).
 
 ## Project layout
 
@@ -31,28 +31,21 @@ integrations/      OpenAI shopping assistant
 exceptions/        domain errors mapped to HTTP status codes
 sql/               schema and seed data, loaded by MySQL on first start
 frontend/app.py    Streamlit UI
-compose.yaml       MySQL + Redis
+Dockerfile         image for the API and the Streamlit app
+compose.yaml       MySQL, Redis, API and frontend
 ```
 
 ## Getting started
 
-You need Python 3.10+, Docker, and an OpenAI API key (only the chat assistant uses it).
+You need Docker and an OpenAI API key (only the chat assistant uses it).
 
-**1. Install dependencies**
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-**2. Configure environment**
+**1. Configure environment**
 
 ```bash
 cp .env.example .env
 ```
 
-Set `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` and `OPENAI_API_KEY` in `.env`. The other defaults work with the Compose setup.
+Set `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` and `OPENAI_API_KEY` in `.env`.
 
 | Variable | Purpose |
 | --- | --- |
@@ -63,30 +56,40 @@ Set `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` and `OPENAI_API_KEY` in `.env`. The 
 | `OPENAI_API_KEY` | key for the chat assistant |
 | `OPENAI_MODEL` | model name passed to the Responses API |
 
-**3. Start MySQL and Redis**
+When you run with Compose, the `api` and `frontend` containers override the host and port values (`MYSQL_HOST`, `MYSQL_PORT`, `REDIS_HOST`, `REDIS_PORT`, `API_BASE_URL`) so they reach `db`, `redis` and `api` over the Compose network. The values in `.env` are what you use when running outside Docker.
+
+**2. Start everything**
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
+
+| Service | URL |
+| --- | --- |
+| Streamlit store | http://127.0.0.1:8501 |
+| API | http://127.0.0.1:8000 (docs at `/docs`) |
+| MySQL | `127.0.0.1:3307` |
+| Redis | `127.0.0.1:6379` |
 
 On the first start MySQL runs everything in `sql/`: it creates the tables and seeds 10 sample products. These scripts only run when the data volume is empty. To reset the database:
 
 ```bash
-docker compose down -v && docker compose up -d
+docker compose down -v && docker compose up --build
 ```
 
-**4. Run the API**
+### Running without Docker for the app
+
+To work on the code with auto-reload, start only the databases in Docker and run the app on your host (Python 3.10+):
 
 ```bash
-uvicorn main:app --reload
-```
+docker compose up -d db redis
 
-The API is at http://127.0.0.1:8000 and the interactive docs at http://127.0.0.1:8000/docs.
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-**5. Run the frontend** (in a second terminal)
-
-```bash
-streamlit run frontend/app.py
+uvicorn main:app --reload                # terminal 1
+streamlit run frontend/app.py            # terminal 2
 ```
 
 ## API overview
@@ -166,5 +169,5 @@ curl -X POST http://127.0.0.1:8000/orders/1/checkout \
 
 ## Notes
 
-- `compose.yaml` runs only MySQL and Redis. The API and Streamlit app run on the host.
+- `compose.yaml` runs MySQL, Redis, the API and the Streamlit app. All ports are bound to `127.0.0.1` only.
 - The sample seed includes out-of-stock items (Sun Hat, Wireless Mouse) so you can see the stock handling.
